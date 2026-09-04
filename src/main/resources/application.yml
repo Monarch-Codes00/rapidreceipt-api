@@ -10,11 +10,12 @@ spring:
       hibernate:
         format_sql: true
     show-sql: true
+    open-in-view: false
 
 server:
   port: 8080
 
 app:
   jwt:
-    secret: ${JWT_SECRET:devsecretkey_change_this_in_production_must_be_at_least_256bits}
+    secret: ${JWT_SECRET:rapidreceipt-dev-secret-key-change-this-in-production-min-256bits}
     expiration: 2592000000

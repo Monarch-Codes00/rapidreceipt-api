@@ -1,0 +1,87 @@
+package com.rapidreceipt.auth;
+
+import com.rapidreceipt.common.DuplicateResourceException;
+import com.rapidreceipt.user.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+/**
+ * Handles user registration and login business logic.
+ *
+ * Register flow:
+ *   1. Check for duplicate email — throw 409 if already taken.
+ *   2. Hash the password with BCrypt.
+ *   3. Save the new User to the DB.
+ *   4. Generate a JWT for immediate login after registration.
+ *   5. Return the token + basic user info.
+ *
+ * Login flow:
+ *   1. Call AuthenticationManager.authenticate() — this internally:
+ *      a. Loads the User via UserDetailsService (by email).
+ *      b. Compares the raw password against the BCrypt hash.
+ *      c. Throws BadCredentialsException if they don't match (Spring handles the 401).
+ *   2. Load the User again to get the full entity for token generation.
+ *   3. Generate and return the JWT.
+ *
+ * Note: AuthService never manually checks the password — it delegates that
+ * entirely to AuthenticationManager, which uses the BCryptPasswordEncoder
+ * configured in SecurityConfig.
+ */
+@Service
+@RequiredArgsConstructor
+public class AuthService {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+    private final AuthenticationManager authenticationManager;
+
+    public AuthResponse register(RegisterRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new DuplicateResourceException("An account with this email already exists");
+        }
+
+        User user = User.builder()
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .businessName(request.getBusinessName())
+                .phone(request.getPhone())
+                .subscriptionTier(SubscriptionTier.FREE)
+                .subscriptionStatus(SubscriptionStatus.TRIAL)
+                .build();
+
+        userRepository.save(user);
+
+        String token = jwtService.generateToken(user);
+
+        return AuthResponse.builder()
+                .token(token)
+                .email(user.getEmail())
+                .businessName(user.getBusinessName())
+                .build();
+    }
+
+    public AuthResponse login(LoginRequest request) {
+        // Throws BadCredentialsException automatically if credentials are wrong
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.getEmail(),
+                        request.getPassword()
+                )
+        );
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found after authentication"));
+
+        String token = jwtService.generateToken(user);
+
+        return AuthResponse.builder()
+                .token(token)
+                .email(user.getEmail())
+                .businessName(user.getBusinessName())
+                .build();
+    }
+}
