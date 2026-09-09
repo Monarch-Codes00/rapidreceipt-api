@@ -5,6 +5,8 @@ import com.rapidreceipt.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
@@ -34,6 +36,8 @@ import java.util.List;
  */
 @Entity
 @Table(name = "invoices")
+@SQLDelete(sql = "UPDATE invoices SET deleted = true WHERE id=?")
+@SQLRestriction("deleted = false")
 @Getter
 @Setter
 @Builder
@@ -106,4 +110,8 @@ public class Invoice {
     @UpdateTimestamp
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean deleted = false;
 }
