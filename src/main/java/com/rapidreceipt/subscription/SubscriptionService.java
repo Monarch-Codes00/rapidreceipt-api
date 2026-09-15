@@ -40,10 +40,10 @@ public class SubscriptionService {
             if (response.getBody() != null && response.getBody().isStatus()) {
                 return response.getBody().getData();
             } else {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "Failed to initialize payment with Paystack");
+                throw new ApiException("Failed to initialize payment with Paystack", HttpStatus.BAD_REQUEST);
             }
         } catch (Exception e) {
-            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Error communicating with Paystack: " + e.getMessage());
+            throw new ApiException("Error communicating with Paystack: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -65,10 +65,10 @@ public class SubscriptionService {
                 user.setSubscriptionStatus(SubscriptionStatus.ACTIVE);
                 userRepository.save(user);
             } else {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "Payment verification failed or is not successful");
+                throw new ApiException("Payment verification failed or is not successful", HttpStatus.BAD_REQUEST);
             }
         } catch (Exception e) {
-            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Error verifying payment with Paystack: " + e.getMessage());
+            throw new ApiException("Error verifying payment with Paystack: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
