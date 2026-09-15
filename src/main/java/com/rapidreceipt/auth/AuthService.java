@@ -7,6 +7,10 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.rapidreceipt.common.ResourceNotFoundException;
+import com.rapidreceipt.common.ApiException;
+import org.springframework.http.HttpStatus;
+import java.time.LocalDateTime;
 
 /**
  * Handles user registration and login business logic.
@@ -83,5 +87,44 @@ public class AuthService {
                 .email(user.getEmail())
                 .businessName(user.getBusinessName())
                 .build();
+    }
+
+    public void forgotPassword(ForgotPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User with this email does not exist"));
+
+        // Generate 6 digit OTP
+        String otp = String.format("%06d", new java.util.Random().nextInt(999999));
+        
+        user.setResetOtp(otp);
+        user.setResetOtpExpiry(LocalDateTime.now().plusMinutes(15));
+        userRepository.save(user);
+
+        // TODO: Send via Email service in production
+        System.out.println("====== PASSWORD RESET OTP FOR " + request.getEmail() + " ======");
+        System.out.println("OTP: " + otp);
+        System.out.println("==================================================");
+    }
+
+    public void resetPassword(ResetPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User with this email does not exist"));
+
+        if (user.getResetOtp() == null || !user.getResetOtp().equals(request.getOtp())) {
+            throw new ApiException("Invalid OTP", HttpStatus.BAD_REQUEST);
+        }
+
+        if (user.getResetOtpExpiry().isBefore(LocalDateTime.now())) {
+            throw new ApiException("OTP has expired", HttpStatus.BAD_REQUEST);
+        }
+
+        // Reset the password
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        
+        // Clear the OTP
+        user.setResetOtp(null);
+        user.setResetOtpExpiry(null);
+        
+        userRepository.save(user);
     }
 }
