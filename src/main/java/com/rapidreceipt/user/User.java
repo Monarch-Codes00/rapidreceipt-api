@@ -82,6 +82,12 @@ public class User implements UserDetails {
     @Builder.Default
     private SubscriptionStatus subscriptionStatus = SubscriptionStatus.TRIAL;
 
+    // --- Password Reset ---
+    @Column(length = 6)
+    private String resetOtp;
+
+    private LocalDateTime resetOtpExpiry;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
