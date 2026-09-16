@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 /**
  * Service handling business logic for Customer entities.
@@ -36,11 +38,9 @@ public class CustomerService {
         return mapToResponse(saved);
     }
 
-    public List<CustomerResponse> getAllCustomers(User user) {
-        return customerRepository.findByUserIdOrderByCreatedAtDesc(user.getId())
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public Page<CustomerResponse> getAllCustomers(User user, Pageable pageable) {
+        return customerRepository.findByUserIdOrderByCreatedAtDesc(user.getId(), pageable)
+                .map(this::mapToResponse);
     }
 
     public CustomerResponse getCustomerById(Long id, User user) {
