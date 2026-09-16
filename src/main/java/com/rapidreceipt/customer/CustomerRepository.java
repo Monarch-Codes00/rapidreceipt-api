@@ -4,6 +4,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 /**
  * Repository for Customer entities.
@@ -14,8 +16,8 @@ import java.util.Optional;
  */
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
-    /** Returns all customers belonging to the authenticated user, newest first. */
-    List<Customer> findByUserIdOrderByCreatedAtDesc(Long userId);
+    /** Returns a page of customers belonging to the authenticated user, newest first. */
+    Page<Customer> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
     /**
      * Finds a specific customer only if it belongs to the given user.

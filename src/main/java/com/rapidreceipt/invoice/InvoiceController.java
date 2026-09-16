@@ -9,6 +9,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 /**
  * REST controller for managing invoices.
@@ -28,8 +31,10 @@ public class InvoiceController {
     }
 
     @GetMapping
-    public ResponseEntity<List<InvoiceResponse>> getAllInvoices(@AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(invoiceService.getAllInvoices(user));
+    public ResponseEntity<Page<InvoiceResponse>> getAllInvoices(
+            @AuthenticationPrincipal User user,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(invoiceService.getAllInvoices(user, pageable));
     }
 
     @GetMapping("/{id}")

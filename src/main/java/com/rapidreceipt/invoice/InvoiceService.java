@@ -13,6 +13,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 /**
  * Service handling business logic for Invoices.
@@ -73,11 +75,9 @@ public class InvoiceService {
         return mapToResponse(savedInvoice);
     }
 
-    public List<InvoiceResponse> getAllInvoices(User user) {
-        return invoiceRepository.findByUserIdOrderByCreatedAtDesc(user.getId())
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public Page<InvoiceResponse> getAllInvoices(User user, Pageable pageable) {
+        return invoiceRepository.findByUserIdOrderByCreatedAtDesc(user.getId(), pageable)
+                .map(this::mapToResponse);
     }
 
     public InvoiceResponse getInvoiceById(Long id, User user) {

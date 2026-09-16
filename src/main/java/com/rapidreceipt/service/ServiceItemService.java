@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 /**
  * Service handling business logic for ServiceItem entities.
@@ -33,11 +35,9 @@ public class ServiceItemService {
         return mapToResponse(saved);
     }
 
-    public List<ServiceItemResponse> getAllServiceItems(User user) {
-        return serviceItemRepository.findByUserIdOrderByCreatedAtDesc(user.getId())
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public Page<ServiceItemResponse> getAllServiceItems(User user, Pageable pageable) {
+        return serviceItemRepository.findByUserIdOrderByCreatedAtDesc(user.getId(), pageable)
+                .map(this::mapToResponse);
     }
 
     public ServiceItemResponse getServiceItemById(Long id, User user) {

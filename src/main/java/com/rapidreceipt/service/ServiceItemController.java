@@ -9,6 +9,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 /**
  * REST controller for managing services/products.
@@ -28,8 +31,10 @@ public class ServiceItemController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ServiceItemResponse>> getAllServiceItems(@AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(serviceItemService.getAllServiceItems(user));
+    public ResponseEntity<Page<ServiceItemResponse>> getAllServices(
+            @AuthenticationPrincipal User user,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(serviceItemService.getAllServiceItems(user, pageable));
     }
 
     @GetMapping("/{id}")

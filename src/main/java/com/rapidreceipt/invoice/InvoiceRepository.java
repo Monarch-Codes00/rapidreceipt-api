@@ -4,6 +4,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 /**
  * Repository for Invoice entities.
@@ -17,7 +19,7 @@ import java.util.Optional;
 public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
 
     /** All invoices for a user, most recent first. */
-    List<Invoice> findByUserIdOrderByCreatedAtDesc(Long userId);
+    Page<Invoice> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
     /** Fetch a specific invoice, guarding against cross-user access. */
     Optional<Invoice> findByIdAndUserId(Long id, Long userId);
