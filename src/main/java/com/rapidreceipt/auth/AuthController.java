@@ -53,4 +53,9 @@ public class AuthController {
         authService.resetPassword(request);
         return ResponseEntity.ok(java.util.Map.of("message", "Password reset successfully"));
     }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<TokenRefreshResponse> refreshToken(@Valid @RequestBody TokenRefreshRequest request) {
+        return ResponseEntity.ok(authService.refreshToken(request));
+    }
 }

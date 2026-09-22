@@ -42,6 +42,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final RefreshTokenService refreshTokenService;
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -60,9 +61,11 @@ public class AuthService {
         userRepository.save(user);
 
         String token = jwtService.generateToken(user);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
         return AuthResponse.builder()
                 .token(token)
+                .refreshToken(refreshToken.getToken())
                 .email(user.getEmail())
                 .businessName(user.getBusinessName())
                 .build();
@@ -81,9 +84,11 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("User not found after authentication"));
 
         String token = jwtService.generateToken(user);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
         return AuthResponse.builder()
                 .token(token)
+                .refreshToken(refreshToken.getToken())
                 .email(user.getEmail())
                 .businessName(user.getBusinessName())
                 .build();
@@ -126,5 +131,19 @@ public class AuthService {
         user.setResetOtpExpiry(null);
         
         userRepository.save(user);
+    }
+
+    public TokenRefreshResponse refreshToken(TokenRefreshRequest request) {
+        return refreshTokenService.findByToken(request.getRefreshToken())
+                .map(refreshTokenService::verifyExpiration)
+                .map(RefreshToken::getUser)
+                .map(user -> {
+                    String token = jwtService.generateToken(user);
+                    return TokenRefreshResponse.builder()
+                            .token(token)
+                            .refreshToken(request.getRefreshToken())
+                            .build();
+                })
+                .orElseThrow(() -> new ApiException("Refresh token is not in database!", HttpStatus.UNAUTHORIZED));
     }
 }
