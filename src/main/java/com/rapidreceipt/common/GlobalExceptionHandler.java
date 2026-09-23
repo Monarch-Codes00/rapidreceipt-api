@@ -83,9 +83,10 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGenericException(Exception ex) {
+        ex.printStackTrace(); // Added for debugging 500 errors
         ApiError error = ApiError.builder()
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .message("An unexpected error occurred. Please try again.")
+                .message("Internal Error: " + ex.getMessage() + " | Cause: " + (ex.getCause() != null ? ex.getCause().getMessage() : "null"))
                 .timestamp(LocalDateTime.now())
                 .build();
         return ResponseEntity.internalServerError().body(error);
