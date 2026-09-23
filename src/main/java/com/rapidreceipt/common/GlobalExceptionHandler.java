@@ -78,6 +78,19 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handles disabled accounts (unverified email).
+     */
+    @ExceptionHandler(org.springframework.security.authentication.DisabledException.class)
+    public ResponseEntity<ApiError> handleDisabledException(org.springframework.security.authentication.DisabledException ex) {
+        ApiError error = ApiError.builder()
+                .status(HttpStatus.FORBIDDEN.value())
+                .message("Please verify your email address before logging in")
+                .timestamp(LocalDateTime.now())
+                .build();
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
+
+    /**
      * Catch-all for unexpected errors.
      * Returns a generic 500 message — never expose raw exception details to clients.
      */
