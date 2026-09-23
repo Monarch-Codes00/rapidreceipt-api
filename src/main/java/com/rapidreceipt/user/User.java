@@ -90,6 +90,7 @@ public class User implements UserDetails {
 
     // --- Verification ---
     @Builder.Default
+    @Column(nullable = false, columnDefinition = "boolean default false")
     private boolean isVerified = false;
 
     @Column(length = 6)
