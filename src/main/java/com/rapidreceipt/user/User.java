@@ -88,6 +88,16 @@ public class User implements UserDetails {
 
     private LocalDateTime resetOtpExpiry;
 
+    // --- Verification ---
+    @Builder.Default
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean isVerified = false;
+
+    @Column(length = 6)
+    private String registrationOtp;
+
+    private LocalDateTime registrationOtpExpiry;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -118,6 +128,6 @@ public class User implements UserDetails {
     @Override public boolean isAccountNonExpired()     { return true; }
     @Override public boolean isAccountNonLocked()      { return true; }
     @Override public boolean isCredentialsNonExpired() { return true; }
-    @Override public boolean isEnabled()               { return true; }
+    @Override public boolean isEnabled()               { return isVerified; }
 }
 

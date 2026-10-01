@@ -28,8 +28,13 @@ public class AuthController {
      * Returns 201 Created (not 200) — a new resource was created.
      */
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
+    }
+
+    @PostMapping("/verify-registration")
+    public ResponseEntity<AuthResponse> verifyRegistration(@Valid @RequestBody VerifyRegistrationRequest request) {
+        return ResponseEntity.ok(authService.verifyRegistration(request));
     }
 
     /**

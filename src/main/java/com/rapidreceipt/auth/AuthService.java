@@ -9,6 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.rapidreceipt.common.ResourceNotFoundException;
 import com.rapidreceipt.common.ApiException;
+import com.rapidreceipt.common.EmailService;
 import org.springframework.http.HttpStatus;
 import java.time.LocalDateTime;
 
@@ -43,8 +44,9 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final RefreshTokenService refreshTokenService;
+    private final EmailService emailService;
 
-    public AuthResponse register(RegisterRequest request) {
+    public RegisterResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException("An account with this email already exists");
         }
@@ -58,6 +60,42 @@ public class AuthService {
                 .subscriptionStatus(SubscriptionStatus.TRIAL)
                 .build();
 
+        userRepository.save(user);
+
+        String otp = String.format("%06d", new java.util.Random().nextInt(999999));
+        user.setRegistrationOtp(otp);
+        user.setRegistrationOtpExpiry(LocalDateTime.now().plusMinutes(15));
+        user.setVerified(false);
+
+        userRepository.save(user);
+
+        emailService.sendOtpEmail(user.getEmail(), otp, "registration");
+
+        return RegisterResponse.builder()
+                .message("OTP sent to email successfully")
+                .email(user.getEmail())
+                .build();
+    }
+
+    public AuthResponse verifyRegistration(VerifyRegistrationRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (user.isVerified()) {
+            throw new ApiException("User is already verified", HttpStatus.BAD_REQUEST);
+        }
+
+        if (user.getRegistrationOtp() == null || !user.getRegistrationOtp().equals(request.getOtp())) {
+            throw new ApiException("Invalid OTP", HttpStatus.BAD_REQUEST);
+        }
+
+        if (user.getRegistrationOtpExpiry().isBefore(LocalDateTime.now())) {
+            throw new ApiException("OTP has expired", HttpStatus.BAD_REQUEST);
+        }
+
+        user.setVerified(true);
+        user.setRegistrationOtp(null);
+        user.setRegistrationOtpExpiry(null);
         userRepository.save(user);
 
         String token = jwtService.generateToken(user);
@@ -105,10 +143,7 @@ public class AuthService {
         user.setResetOtpExpiry(LocalDateTime.now().plusMinutes(15));
         userRepository.save(user);
 
-        // TODO: Send via Email service in production
-        System.out.println("====== PASSWORD RESET OTP FOR " + request.getEmail() + " ======");
-        System.out.println("OTP: " + otp);
-        System.out.println("==================================================");
+        emailService.sendOtpEmail(user.getEmail(), otp, "password_reset");
     }
 
     public void resetPassword(ResetPasswordRequest request) {
