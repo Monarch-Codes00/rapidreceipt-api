@@ -109,6 +109,22 @@ public class AuthService {
                 .build();
     }
 
+    public void resendRegistrationOtp(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (user.isVerified()) {
+            throw new ApiException("User is already verified", HttpStatus.BAD_REQUEST);
+        }
+
+        String otp = String.format("%06d", new java.util.Random().nextInt(999999));
+        user.setRegistrationOtp(otp);
+        user.setRegistrationOtpExpiry(LocalDateTime.now().plusMinutes(15));
+        userRepository.save(user);
+
+        emailService.sendOtpEmail(user.getEmail(), otp, "registration");
+    }
+
     public AuthResponse login(LoginRequest request) {
         // Throws BadCredentialsException automatically if credentials are wrong
         authenticationManager.authenticate(
