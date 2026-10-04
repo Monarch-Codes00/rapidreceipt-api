@@ -37,6 +37,12 @@ public class AuthController {
         return ResponseEntity.ok(authService.verifyRegistration(request));
     }
 
+    @PostMapping("/resend-registration-otp")
+    public ResponseEntity<java.util.Map<String, String>> resendRegistrationOtp(@RequestBody java.util.Map<String, String> request) {
+        authService.resendRegistrationOtp(request.get("email"));
+        return ResponseEntity.ok(java.util.Map.of("message", "OTP resent successfully"));
+    }
+
     /**
      * POST /api/auth/login
      * Authenticates existing credentials and returns a fresh JWT token.
