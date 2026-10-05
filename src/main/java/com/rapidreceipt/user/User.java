@@ -51,6 +51,9 @@ public class User implements UserDetails {
     @Column(nullable = false, length = 150)
     private String businessName;
 
+    @Column(length = 255)
+    private String businessAddress;
+
     @Column(length = 20)
     private String phone;
 
