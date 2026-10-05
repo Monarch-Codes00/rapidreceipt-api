@@ -16,6 +16,7 @@ public class ProfileUpdateRequest {
     @NotBlank(message = "Business name is required")
     private String businessName;
 
+    private String businessAddress;
     private String phone;
     private String bankName;
     private String accountNumber;

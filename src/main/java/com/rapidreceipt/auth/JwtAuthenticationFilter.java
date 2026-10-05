@@ -47,16 +47,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
 
+        String jwt = null;
         final String authHeader = request.getHeader("Authorization");
 
-        // No Authorization header or not a Bearer token — skip JWT processing
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            jwt = authHeader.substring(7);
+        } else if (request.getParameter("token") != null && !request.getParameter("token").trim().isEmpty()) {
+            jwt = request.getParameter("token").trim();
+        }
+
+        // No token present — skip JWT processing
+        if (jwt == null) {
             filterChain.doFilter(request, response);
             return;
         }
-
-        // Extract the token (everything after "Bearer ")
-        final String jwt = authHeader.substring(7);
         final String userEmail;
 
         try {

@@ -40,5 +40,9 @@ public class InvoiceRequest {
     @Valid
     private List<InvoiceItemRequest> items;
 
+    private InvoiceStatus status;
+
     private BigDecimal discount = BigDecimal.ZERO;
+
+    private BigDecimal taxRate = BigDecimal.ZERO;
 }

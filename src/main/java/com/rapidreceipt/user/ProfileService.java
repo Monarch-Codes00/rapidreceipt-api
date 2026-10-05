@@ -25,6 +25,7 @@ public class ProfileService {
                 .orElseThrow(() -> new ResourceNotFoundException("User profile not found"));
 
         freshUser.setBusinessName(request.getBusinessName());
+        freshUser.setBusinessAddress(request.getBusinessAddress());
         freshUser.setPhone(request.getPhone());
         freshUser.setBankName(request.getBankName());
         freshUser.setAccountNumber(request.getAccountNumber());
@@ -40,6 +41,7 @@ public class ProfileService {
                 .id(user.getId())
                 .email(user.getEmail())
                 .businessName(user.getBusinessName())
+                .businessAddress(user.getBusinessAddress())
                 .phone(user.getPhone())
                 .bankName(user.getBankName())
                 .accountNumber(user.getAccountNumber())

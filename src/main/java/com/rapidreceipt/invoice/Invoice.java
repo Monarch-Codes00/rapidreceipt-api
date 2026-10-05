@@ -80,12 +80,15 @@ public class Invoice {
 
     /**
      * The line items on this invoice.
-     * CascadeType.ALL + orphanRemoval = true means the items collection
-     * is the single source of truth — add/remove from the list, save the Invoice.
      */
     @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<InvoiceItem> items = new ArrayList<>();
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20, columnDefinition = "varchar(20) default 'UNPAID'")
+    @Builder.Default
+    private InvoiceStatus status = InvoiceStatus.UNPAID;
 
     /** Pre-discount total of all line items (qty × price summed). */
     @Column(nullable = false, precision = 12, scale = 2)
@@ -97,7 +100,17 @@ public class Invoice {
     @Builder.Default
     private BigDecimal discount = BigDecimal.ZERO;
 
-    /** Final amount payable: subtotal - discount. */
+    /** Tax rate percentage e.g. 7.50 for 7.5% VAT. */
+    @Column(precision = 5, scale = 2, columnDefinition = "numeric(5,2) default 0.00")
+    @Builder.Default
+    private BigDecimal taxRate = BigDecimal.ZERO;
+
+    /** Computed tax amount: (subtotal - discount) * (taxRate / 100). */
+    @Column(precision = 12, scale = 2, columnDefinition = "numeric(12,2) default 0.00")
+    @Builder.Default
+    private BigDecimal taxAmount = BigDecimal.ZERO;
+
+    /** Final amount payable: (subtotal - discount) + taxAmount. */
     @Column(nullable = false, precision = 12, scale = 2)
     @Builder.Default
     private BigDecimal total = BigDecimal.ZERO;

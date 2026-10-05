@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
 /**
@@ -40,6 +41,9 @@ public class InvoiceService {
         long nextInvoiceNumberSeq = invoiceRepository.countByUserId(user.getId()) + 1;
         String generatedNumber = generateInvoiceNumber(nextInvoiceNumberSeq);
 
+        BigDecimal taxRate = request.getTaxRate() != null ? request.getTaxRate() : BigDecimal.ZERO;
+        InvoiceStatus status = request.getStatus() != null ? request.getStatus() : InvoiceStatus.UNPAID;
+
         Invoice invoice = Invoice.builder()
                 .user(user)
                 .customer(customer)
@@ -47,7 +51,9 @@ public class InvoiceService {
                 .issueDate(request.getIssueDate())
                 .dueDate(request.getDueDate())
                 .documentType(request.getDocumentType())
+                .status(status)
                 .discount(request.getDiscount() != null ? request.getDiscount() : BigDecimal.ZERO)
+                .taxRate(taxRate)
                 .build();
 
         List<InvoiceItem> items = request.getItems().stream().map(itemReq -> 
@@ -67,21 +73,45 @@ public class InvoiceService {
 
         invoice.setSubtotal(subtotal);
         
-        BigDecimal total = subtotal.subtract(invoice.getDiscount());
-        invoice.setTotal(total.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : total); 
+        BigDecimal taxable = subtotal.subtract(invoice.getDiscount());
+        if (taxable.compareTo(BigDecimal.ZERO) < 0) taxable = BigDecimal.ZERO;
+        
+        BigDecimal taxAmount = taxable.multiply(taxRate).divide(new BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP);
+        invoice.setTaxAmount(taxAmount);
+
+        BigDecimal total = taxable.add(taxAmount);
+        invoice.setTotal(total); 
 
         Invoice savedInvoice = invoiceRepository.save(invoice);
         
         return mapToResponse(savedInvoice);
     }
 
-    public Page<InvoiceResponse> getAllInvoices(User user, Pageable pageable) {
-        return invoiceRepository.findByUserIdOrderByCreatedAtDesc(user.getId(), pageable)
-                .map(this::mapToResponse);
+    @Transactional
+    public InvoiceResponse updateInvoiceStatus(Long id, InvoiceStatus status, User user) {
+        Invoice invoice = invoiceRepository.findByIdAndUserIdWithDetails(id, user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Invoice not found or doesn't belong to this user"));
+        invoice.setStatus(status);
+        Invoice savedInvoice = invoiceRepository.save(invoice);
+        return mapToResponse(savedInvoice);
     }
 
+    @Transactional(readOnly = true)
+    public Page<InvoiceResponse> getAllInvoices(User user, Pageable pageable) {
+        List<Invoice> invoices = invoiceRepository.findByUserIdWithDetails(user.getId());
+        List<InvoiceResponse> responses = invoices.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+        // Wrap list in a Page so the controller signature stays the same
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), responses.size());
+        List<InvoiceResponse> pageContent = start >= responses.size() ? List.of() : responses.subList(start, end);
+        return new PageImpl<>(pageContent, pageable, responses.size());
+    }
+
+    @Transactional(readOnly = true)
     public InvoiceResponse getInvoiceById(Long id, User user) {
-        Invoice invoice = invoiceRepository.findByIdAndUserId(id, user.getId())
+        Invoice invoice = invoiceRepository.findByIdAndUserIdWithDetails(id, user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Invoice not found or doesn't belong to this user"));
         return mapToResponse(invoice);
     }
@@ -121,12 +151,15 @@ public class InvoiceService {
                 .id(invoice.getId())
                 .invoiceNumber(invoice.getInvoiceNumber())
                 .documentType(invoice.getDocumentType())
+                .status(invoice.getStatus())
                 .customer(customerResponse)
                 .issueDate(invoice.getIssueDate())
                 .dueDate(invoice.getDueDate())
                 .items(itemResponses)
                 .subtotal(invoice.getSubtotal())
                 .discount(invoice.getDiscount())
+                .taxRate(invoice.getTaxRate())
+                .taxAmount(invoice.getTaxAmount())
                 .total(invoice.getTotal())
                 .createdAt(invoice.getCreatedAt())
                 .updatedAt(invoice.getUpdatedAt())

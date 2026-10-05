@@ -28,6 +28,7 @@ public class InvoiceResponse {
     private Long id;
     private String invoiceNumber;
     private DocumentType documentType;
+    private InvoiceStatus status;
 
     /** Embedded customer info — avoids an extra fetch by the frontend. */
     private CustomerResponse customer;
@@ -39,6 +40,8 @@ public class InvoiceResponse {
 
     private BigDecimal subtotal;
     private BigDecimal discount;
+    private BigDecimal taxRate;
+    private BigDecimal taxAmount;
     private BigDecimal total;
 
     private LocalDateTime createdAt;

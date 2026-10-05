@@ -23,6 +23,7 @@ public class ProfileResponse {
     private Long id;
     private String email;
     private String businessName;
+    private String businessAddress;
     private String phone;
 
     // Bank details
