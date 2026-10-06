@@ -39,7 +39,10 @@ public class InvoiceService {
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found or doesn't belong to this user"));
 
         long nextInvoiceNumberSeq = invoiceRepository.countByUserId(user.getId()) + 1;
-        String generatedNumber = generateInvoiceNumber(nextInvoiceNumberSeq);
+        String generatedNumber;
+        do {
+            generatedNumber = generateInvoiceNumber(nextInvoiceNumberSeq++);
+        } while (invoiceRepository.existsByInvoiceNumber(generatedNumber));
 
         BigDecimal taxRate = request.getTaxRate() != null ? request.getTaxRate() : BigDecimal.ZERO;
         InvoiceStatus status = request.getStatus() != null ? request.getStatus() : InvoiceStatus.UNPAID;
