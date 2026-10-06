@@ -24,13 +24,20 @@ public class ProfileService {
         User freshUser = userRepository.findById(user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User profile not found"));
 
-        freshUser.setBusinessName(request.getBusinessName());
-        freshUser.setBusinessAddress(request.getBusinessAddress());
-        freshUser.setPhone(request.getPhone());
-        freshUser.setBankName(request.getBankName());
-        freshUser.setAccountNumber(request.getAccountNumber());
-        freshUser.setAccountName(request.getAccountName());
-        freshUser.setBrandColor(request.getBrandColor());
+        if (request.getBusinessName() != null) freshUser.setBusinessName(request.getBusinessName());
+        if (request.getBusinessAddress() != null) freshUser.setBusinessAddress(request.getBusinessAddress());
+        if (request.getPhone() != null) freshUser.setPhone(request.getPhone());
+        if (request.getBankName() != null) freshUser.setBankName(request.getBankName());
+        if (request.getAccountNumber() != null) freshUser.setAccountNumber(request.getAccountNumber());
+        if (request.getAccountName() != null) freshUser.setAccountName(request.getAccountName());
+        if (request.getBrandColor() != null) freshUser.setBrandColor(request.getBrandColor());
+        if (request.getSubscriptionTier() != null && !request.getSubscriptionTier().isBlank()) {
+            try {
+                freshUser.setSubscriptionTier(SubscriptionTier.valueOf(request.getSubscriptionTier().toUpperCase()));
+                freshUser.setSubscriptionStatus(SubscriptionStatus.ACTIVE);
+            } catch (Exception ignored) {
+            }
+        }
 
         User updatedUser = userRepository.save(freshUser);
         return mapToResponse(updatedUser);
