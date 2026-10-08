@@ -46,6 +46,10 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     /** Uniqueness guard — invoice number must never collide. */
     boolean existsByInvoiceNumber(String invoiceNumber);
 
+    /** Uniqueness guard — checks ALL rows in DB including soft-deleted ones via native SQL. */
+    @Query(value = "SELECT COUNT(*) > 0 FROM invoices WHERE invoice_number = :invoiceNumber", nativeQuery = true)
+    boolean existsByInvoiceNumberIncludingDeleted(@Param("invoiceNumber") String invoiceNumber);
+
     /**
      * Count of invoices for a user — used to generate sequential invoice numbers.
      * e.g. if user has 41 invoices, next number is padded to "00042".

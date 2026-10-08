@@ -42,7 +42,7 @@ public class InvoiceService {
         String generatedNumber;
         do {
             generatedNumber = generateInvoiceNumber(nextInvoiceNumberSeq++);
-        } while (invoiceRepository.existsByInvoiceNumber(generatedNumber));
+        } while (invoiceRepository.existsByInvoiceNumberIncludingDeleted(generatedNumber));
 
         BigDecimal taxRate = request.getTaxRate() != null ? request.getTaxRate() : BigDecimal.ZERO;
         InvoiceStatus status = request.getStatus() != null ? request.getStatus() : InvoiceStatus.UNPAID;
