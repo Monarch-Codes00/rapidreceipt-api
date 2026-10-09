@@ -28,10 +28,16 @@ public class LogoController {
         }
 
         try {
-            String logoUrl = fileStorageService.storeFile(file, user.getId());
+            byte[] bytes = file.getBytes();
+            String contentType = file.getContentType() != null ? file.getContentType() : "image/png";
+            String base64Str = "data:" + contentType + ";base64," + java.util.Base64.getEncoder().encodeToString(bytes);
             
+            try {
+                fileStorageService.storeFile(file, user.getId());
+            } catch (Exception ignored) {}
+
             User freshUser = userRepository.findById(user.getId()).orElseThrow();
-            freshUser.setLogoUrl(logoUrl);
+            freshUser.setLogoUrl(base64Str);
             userRepository.save(freshUser);
 
             return ResponseEntity.ok(profileService.getProfile(freshUser));
