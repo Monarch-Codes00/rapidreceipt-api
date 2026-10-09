@@ -50,7 +50,7 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/auth/**", "/uploads/**").permitAll()    // register, login, and uploaded logos are public
+                .requestMatchers("/api/auth/**", "/api/v1/health", "/uploads/**").permitAll()    // register, login, health check, and uploaded logos are public
                 .anyRequest().authenticated()                   // everything else needs a JWT
             )
             .sessionManagement(session -> session
