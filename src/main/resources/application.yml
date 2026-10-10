@@ -42,3 +42,9 @@ app:
 
 paystack:
   secret-key: ${PAYSTACK_SECRET_KEY:sk_test_placeholder_replace_me}
+
+supabase:
+  url: ${SUPABASE_URL:https://bjcuqajhynqgagxkoknc.supabase.co}
+  key: ${SUPABASE_KEY:}
+  bucket: ${SUPABASE_BUCKET:logos}
+
