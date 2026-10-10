@@ -53,11 +53,21 @@ public class ProfileService {
                 .bankName(user.getBankName())
                 .accountNumber(user.getAccountNumber())
                 .accountName(user.getAccountName())
-                .logoUrl(user.getLogoUrl())
+                .logoUrl(sanitizeLogoUrl(user.getLogoUrl()))
                 .brandColor(user.getBrandColor())
                 .subscriptionTier(user.getSubscriptionTier())
                 .subscriptionStatus(user.getSubscriptionStatus())
                 .createdAt(user.getCreatedAt())
                 .build();
+    }
+
+    private String sanitizeLogoUrl(String logoUrl) {
+        if (logoUrl == null || logoUrl.isBlank()) {
+            return null;
+        }
+        if (logoUrl.startsWith("http://") || logoUrl.startsWith("https://") || logoUrl.startsWith("data:image")) {
+            return logoUrl;
+        }
+        return null;
     }
 }

@@ -1,7 +1,7 @@
 package com.rapidreceipt.user;
 
 import com.rapidreceipt.common.ApiException;
-import com.rapidreceipt.common.FileStorageService;
+import com.rapidreceipt.common.SupabaseStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class LogoController {
 
-    private final FileStorageService fileStorageService;
+    private final SupabaseStorageService supabaseStorageService;
     private final UserRepository userRepository;
     private final ProfileService profileService;
 
@@ -28,16 +28,10 @@ public class LogoController {
         }
 
         try {
-            byte[] bytes = file.getBytes();
-            String contentType = file.getContentType() != null ? file.getContentType() : "image/png";
-            String base64Str = "data:" + contentType + ";base64," + java.util.Base64.getEncoder().encodeToString(bytes);
-            
-            try {
-                fileStorageService.storeFile(file, user.getId());
-            } catch (Exception ignored) {}
+            String uploadedUrl = supabaseStorageService.uploadLogo(file, user.getId());
 
             User freshUser = userRepository.findById(user.getId()).orElseThrow();
-            freshUser.setLogoUrl(base64Str);
+            freshUser.setLogoUrl(uploadedUrl);
             userRepository.save(freshUser);
 
             return ResponseEntity.ok(profileService.getProfile(freshUser));
