@@ -38,7 +38,7 @@ server:
 app:
   jwt:
     secret: ${JWT_SECRET:rapidreceipt-dev-secret-key-change-this-in-production-min-256bits}
-    expiration: 3600000 # 1 hour in milliseconds
+    expiration: 604800000 # 7 days in milliseconds
 
 paystack:
   secret-key: ${PAYSTACK_SECRET_KEY:sk_test_placeholder_replace_me}
