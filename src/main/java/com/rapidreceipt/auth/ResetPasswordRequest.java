@@ -10,7 +10,9 @@ public class ResetPasswordRequest {
     @Email(message = "Invalid email format")
     private String email;
 
-    @NotBlank(message = "OTP is required")
+    @NotBlank(message = "Phone number is required")
+    private String phone;
+
     private String otp;
 
     @NotBlank(message = "New password is required")

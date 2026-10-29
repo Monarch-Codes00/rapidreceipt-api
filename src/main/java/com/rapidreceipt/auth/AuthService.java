@@ -46,34 +46,31 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
     private final EmailService emailService;
 
-    public RegisterResponse register(RegisterRequest request) {
+    public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException("An account with this email already exists");
         }
 
         User user = User.builder()
-                .email(request.getEmail())
+                .email(request.getEmail().trim())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .businessName(request.getBusinessName())
                 .phone(request.getPhone())
                 .subscriptionTier(SubscriptionTier.FREE)
                 .subscriptionStatus(SubscriptionStatus.TRIAL)
+                .isVerified(true)
                 .build();
 
         userRepository.save(user);
 
-        String otp = String.format("%06d", new java.util.Random().nextInt(999999));
-        user.setRegistrationOtp(otp);
-        user.setRegistrationOtpExpiry(LocalDateTime.now().plusMinutes(15));
-        user.setVerified(false);
+        String token = jwtService.generateToken(user);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
-        userRepository.save(user);
-
-        emailService.sendOtpEmail(user.getEmail(), otp, "registration");
-
-        return RegisterResponse.builder()
-                .message("OTP sent to email successfully")
+        return AuthResponse.builder()
+                .token(token)
+                .refreshToken(refreshToken.getToken())
                 .email(user.getEmail())
+                .businessName(user.getBusinessName())
                 .build();
     }
 
@@ -149,39 +146,41 @@ public class AuthService {
     }
 
     public void forgotPassword(ForgotPasswordRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("User with this email does not exist"));
+        User user = userRepository.findByEmail(request.getEmail().trim())
+                .orElseThrow(() -> new ApiException("No account found matching this email and phone number", HttpStatus.BAD_REQUEST));
 
-        // Generate 6 digit OTP
-        String otp = String.format("%06d", new java.util.Random().nextInt(999999));
-        
-        user.setResetOtp(otp);
-        user.setResetOtpExpiry(LocalDateTime.now().plusMinutes(15));
-        userRepository.save(user);
-
-        emailService.sendOtpEmail(user.getEmail(), otp, "password_reset");
+        if (!phonesMatch(user.getPhone(), request.getPhone())) {
+            throw new ApiException("No account found matching this email and phone number", HttpStatus.BAD_REQUEST);
+        }
     }
 
     public void resetPassword(ResetPasswordRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("User with this email does not exist"));
+        User user = userRepository.findByEmail(request.getEmail().trim())
+                .orElseThrow(() -> new ApiException("No account found matching this email and phone number", HttpStatus.BAD_REQUEST));
 
-        if (user.getResetOtp() == null || !user.getResetOtp().equals(request.getOtp())) {
-            throw new ApiException("Invalid OTP", HttpStatus.BAD_REQUEST);
+        if (!phonesMatch(user.getPhone(), request.getPhone())) {
+            throw new ApiException("No account found matching this email and phone number", HttpStatus.BAD_REQUEST);
         }
 
-        if (user.getResetOtpExpiry().isBefore(LocalDateTime.now())) {
-            throw new ApiException("OTP has expired", HttpStatus.BAD_REQUEST);
-        }
-
-        // Reset the password
+        // Reset the password directly after email + phone match
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        
-        // Clear the OTP
+        user.setVerified(true);
         user.setResetOtp(null);
         user.setResetOtpExpiry(null);
-        
+
         userRepository.save(user);
+    }
+
+    private boolean phonesMatch(String storedPhone, String inputPhone) {
+        if (storedPhone == null || inputPhone == null) return false;
+        String p1 = storedPhone.replaceAll("[^0-9]", "");
+        String p2 = inputPhone.replaceAll("[^0-9]", "");
+        if (p1.isEmpty() || p2.isEmpty()) return false;
+        if (p1.equals(p2)) return true;
+        if (p1.length() >= 10 && p2.length() >= 10) {
+            return p1.substring(p1.length() - 10).equals(p2.substring(p2.length() - 10));
+        }
+        return false;
     }
 
     public TokenRefreshResponse refreshToken(TokenRefreshRequest request) {
