@@ -28,7 +28,7 @@ public class AuthController {
      * Returns 201 Created (not 200) — a new resource was created.
      */
     @PostMapping("/register")
-    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
     }
 
@@ -56,7 +56,7 @@ public class AuthController {
     @PostMapping("/forgot-password")
     public ResponseEntity<java.util.Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         authService.forgotPassword(request);
-        return ResponseEntity.ok(java.util.Map.of("message", "OTP sent to email successfully"));
+        return ResponseEntity.ok(java.util.Map.of("message", "Account verified successfully"));
     }
 
     @PostMapping("/reset-password")
